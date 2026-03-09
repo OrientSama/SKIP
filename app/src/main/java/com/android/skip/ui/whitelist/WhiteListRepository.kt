@@ -40,6 +40,6 @@ class WhiteListRepository @Inject constructor() {
     }
 
     fun isAppInWhiteList(packageName: String): Boolean {
-        return _whiteList.indexOf(packageName) != -1
+        return _whiteList.contains(packageName)
     }
 }

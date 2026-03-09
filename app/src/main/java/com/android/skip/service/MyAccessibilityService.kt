@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.graphics.Rect
+import android.util.Log
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -20,6 +21,7 @@ import com.android.skip.ui.settings.strict.StrictRepository
 import com.android.skip.ui.settings.tip.TipRepository
 import com.android.skip.ui.whitelist.WhiteListRepository
 import com.android.skip.util.AccessibilityState
+import com.android.skip.util.AccessibilityStateUtils
 import com.android.skip.util.MyToast
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.LogUtils
@@ -83,16 +85,24 @@ class MyAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         try {
-            val rootNode = getCurrentRootNode()
+            if(event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
 
-            val rootNodePackageName = rootNode.packageName.toString()
-            if (rootNodePackageName != appPackageName) {
+            val packageName = event.packageName?.toString() ?: return
+
+            Log.d("SKIP_APP",
+                "onAccessibilityEvent: WINDOW_STATE_CHANGED and scanTime =$scanTimes\n appPackageName =$appPackageName"
+            )
+
+            if (whiteListRepository.isAppInWhiteList(packageName)) return  // 过滤白名单
+
+            if (packageName != appPackageName) {
                 scanTimes = 0
                 clickedRect.clear()
-                appPackageName = rootNodePackageName
+                appPackageName = packageName
             }
 
-            if (!whiteListRepository.isAppInWhiteList(rootNodePackageName) && (isStrict || scanTimes < 50)) {
+            val rootNode = getCurrentRootNode() ?: return
+            if (isStrict || scanTimes < 10) {
                 val that = this
                 serviceScope.launch {
                     val targetRect =
@@ -104,7 +114,7 @@ class MyAccessibilityService : AccessibilityService() {
                                 click(that, rect)
                             }
                             clickedRect.add(rectStr)
-                            LogUtils.d("clicked: packageName is $rootNodePackageName rect is $rectStr")
+                            LogUtils.d("clicked: packageName is $packageName rect is $rectStr")
                         }
                     }
                 }
@@ -122,7 +132,7 @@ class MyAccessibilityService : AccessibilityService() {
             }
 
             scanTimes++
-        } catch (e: Exception) {
+            } catch (e: Exception) {
             LogUtils.e(e)
         }
     }
@@ -189,8 +199,8 @@ class MyAccessibilityService : AccessibilityService() {
         return super.onKeyEvent(event)
     }
 
-    private fun getCurrentRootNode(): AccessibilityNodeInfo {
-        return rootInActiveWindow ?: throw IllegalStateException("No valid root node available")
+    private fun getCurrentRootNode(): AccessibilityNodeInfo? {
+        return rootInActiveWindow
     }
 
     private fun isSystemClass(className: String): Boolean {

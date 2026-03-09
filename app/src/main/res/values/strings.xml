@@ -79,7 +79,7 @@
     <string name="toast_save_fail">保存失败</string>
     <string name="toast_del_success">删除成功</string>
     <string name="toast_del_fail">删除失败</string>
-    <string name="toast_skip_tip">已为您跳过广告</string>
+    <string name="toast_skip_tip">Bro，已为您跳过广告</string>
 
     <string name="record_please_choose">请选择一个应用来分享文件</string>
     <string name="record_look">查看</string>
@@ -109,6 +109,7 @@
     <string name="store_default_config">https://skip.guoxicheng.top/skip_config_v3.yaml</string>
     <string name="store_strict_mode">STRICT_MODE</string>
     <string name="store_skip_tip">SKIP_TIP</string>
+    <string name="store_skip_tip_text">SKIP_TIP_TEXT</string>
     <string name="store_resident_notification_bar">RESIDENT_NOTIFICATION_BAR</string>
     <string name="store_exclude_from_recent">EXCLUDE_FROM_RECENT</string>
     <string name="store_auto_update">AUTO_UPDATE</string>

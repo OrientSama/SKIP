@@ -43,7 +43,7 @@ class ConfigLoadRepository @Inject constructor() {
             }
         }
 
-        return withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Default) {
             try {
                 val skipByTextTasks =
                     createSkipByTextTasks(this, rootNode, targetConfig?.skipTexts, activityName)
@@ -102,7 +102,7 @@ class ConfigLoadRepository @Inject constructor() {
 
                 val targetNode = if (foundNode != null) {
                     if (skipText.length != null) {
-                        if (foundNode.text != null && foundNode.text.length <= skipText.length) {
+                        if (foundNode.text != null && foundNode.text.length <= skipText.length + 2) {
                             foundNode
                         } else {
                             null
@@ -114,16 +114,16 @@ class ConfigLoadRepository @Inject constructor() {
                     null
                 }
 
-                if (targetNode != null) {
+                targetNode?.let {
                     if (skipText.click != null) {
-                        skipText.click
+                        withContext(Dispatchers.Main){
+                            skipText.click
+                        }
                     } else {
                         val rect = Rect()
                         targetNode.getBoundsInScreen(rect)
                         rect
                     }
-                } else {
-                    null
                 }
             })
         }
@@ -144,16 +144,14 @@ class ConfigLoadRepository @Inject constructor() {
             deferredResults.add(scope.async {
                 val foundNode = rootNode.findAccessibilityNodeInfosByViewId(skipId.id).firstOrNull()
 
-                if (foundNode != null) {
+                foundNode?.let {
                     if (skipId.click != null) {
-                        skipId.click
+                        withContext(Dispatchers.Main){ skipId.click }
                     } else {
                         val rect = Rect()
                         foundNode.getBoundsInScreen(rect)
                         rect
                     }
-                } else {
-                    null
                 }
             })
         }
@@ -175,7 +173,7 @@ class ConfigLoadRepository @Inject constructor() {
             deferredResults.add(scope.async {
                 val foundRect = traverseNode(rootNode, skipBound.bound)
 
-                skipBound.click ?: foundRect
+                withContext(Dispatchers.Main) { skipBound.click ?: foundRect }
             })
         }
         return deferredResults
