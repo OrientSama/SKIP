@@ -1,6 +1,7 @@
 package com.android.skip.data.config
 
 import android.graphics.Rect
+import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 import com.android.skip.R
 import com.android.skip.dataclass.ConfigLoadSchema
@@ -115,15 +116,23 @@ class ConfigLoadRepository @Inject constructor() {
                 }
 
                 targetNode?.let {
-                    if (skipText.click != null) {
-                        withContext(Dispatchers.Main){
-                            skipText.click
-                        }
+                    // 优先尝试直接节点点击
+                    if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                        // 点击成功，无需返回矩形
+                        null  // 注意：这里需要让调用方知道已点击，不再执行手势
                     } else {
-                        val rect = Rect()
-                        targetNode.getBoundsInScreen(rect)
-                        rect
+                        if (skipText.click != null) {
+                            // 使用配置的固定区域，后续手势点击（因为无法通过节点点击）
+                            skipText.click
+                        } else {
+                            // 节点点击失败，回退到坐标手势
+                            val rect = Rect()
+                            it.getBoundsInScreen(rect)
+                            rect
+
+                        }
                     }
+
                 }
             })
         }
@@ -146,7 +155,7 @@ class ConfigLoadRepository @Inject constructor() {
 
                 foundNode?.let {
                     if (skipId.click != null) {
-                        withContext(Dispatchers.Main){ skipId.click }
+                        skipId.click
                     } else {
                         val rect = Rect()
                         foundNode.getBoundsInScreen(rect)
@@ -173,7 +182,7 @@ class ConfigLoadRepository @Inject constructor() {
             deferredResults.add(scope.async {
                 val foundRect = traverseNode(rootNode, skipBound.bound)
 
-                withContext(Dispatchers.Main) { skipBound.click ?: foundRect }
+                skipBound.click ?: foundRect
             })
         }
         return deferredResults

@@ -36,6 +36,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 
@@ -47,7 +49,7 @@ class MyAccessibilityService : AccessibilityService() {
     private var isStrict: Boolean = false
     private var scanTimes: Int = 0
 
-    private val clickedRect: MutableSet<String> = mutableSetOf()
+    private val clickedRect = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
 
     @Inject
@@ -89,10 +91,6 @@ class MyAccessibilityService : AccessibilityService() {
 
             val packageName = event.packageName?.toString() ?: return
 
-            Log.d("SKIP_APP",
-                "onAccessibilityEvent: WINDOW_STATE_CHANGED and scanTime =$scanTimes\n appPackageName =$appPackageName"
-            )
-
             if (whiteListRepository.isAppInWhiteList(packageName)) return  // 过滤白名单
 
             if (packageName != appPackageName) {
@@ -101,7 +99,17 @@ class MyAccessibilityService : AccessibilityService() {
                 appPackageName = packageName
             }
 
+            Log.d("SKIP_APP",
+                "onAccessibilityEvent: WINDOW_STATE_CHANGED and scanTime =$scanTimes\n appPackageName =$appPackageName"
+            )
+
             val rootNode = getCurrentRootNode() ?: return
+            val rootPackageName = rootNode.packageName.toString()
+            if( rootPackageName != packageName ) return
+            getActivityName(event)?.let {
+                appActivityName = it
+            }
+
             if (isStrict || scanTimes < 10) {
                 val that = this
                 serviceScope.launch {
@@ -109,19 +117,14 @@ class MyAccessibilityService : AccessibilityService() {
                         configLoadRepository.getTargetRect(rootNode, appActivityName, isStrict)
                     targetRect?.let { rect ->
                         val rectStr = rect.toString()
-                        if (!clickedRect.contains(rectStr)) {
+                        if(clickedRect.add(rectStr)){
                             withContext(Dispatchers.Main) {
                                 click(that, rect)
                             }
-                            clickedRect.add(rectStr)
                             LogUtils.d("clicked: packageName is $packageName rect is $rectStr")
                         }
                     }
                 }
-            }
-
-            getActivityName(event)?.let {
-                appActivityName = it
             }
 
             appActivityName?.let {
