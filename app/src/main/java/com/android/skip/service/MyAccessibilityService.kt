@@ -98,7 +98,7 @@ class MyAccessibilityService : AccessibilityService() {
                 appPackageName = packageName
             }
 
-            Log.d("SKIP_APP",
+            LogUtils.d(
                 "onAccessibilityEvent: ${event.eventType} and scanTime =$scanTimes\n appPackageName =$appPackageName"
             )
 
