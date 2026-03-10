@@ -2,6 +2,10 @@ package com.android.skip.service
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Path
 import android.graphics.Rect
 import android.util.Log
@@ -86,8 +90,34 @@ class MyAccessibilityService : AccessibilityService() {
 
     private val strictObserver = Observer<Boolean> { isStrict = it }
 
+    private var isScreenOn = true
+
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                Intent.ACTION_SCREEN_ON -> {isScreenOn = true
+                    LogUtils.d("亮屏")
+                }
+                Intent.ACTION_SCREEN_OFF -> {
+                    isScreenOn = false
+                    LogUtils.d("息屏")
+                }
+            }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        registerReceiver(screenStateReceiver, filter)
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         try {
+            if(!isScreenOn) return    // 息屏直接返回
             if(!event.isUseful()) return
             val packageName = event.packageName?.toString() ?: return
             if (whiteListRepository.isAppInWhiteList(packageName)) return  // 过滤白名单
@@ -176,6 +206,7 @@ class MyAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        unregisterReceiver(screenStateReceiver)
         serviceScope.cancel()
         startAccessibilityRepository.changeAccessibilityState(AccessibilityState.STOPPED)
 
