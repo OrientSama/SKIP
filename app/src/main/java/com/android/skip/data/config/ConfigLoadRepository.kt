@@ -1,13 +1,13 @@
 package com.android.skip.data.config
 
 import android.graphics.Rect
-import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 import com.android.skip.R
 import com.android.skip.dataclass.ConfigLoadSchema
 import com.android.skip.dataclass.LoadSkipBound
 import com.android.skip.dataclass.LoadSkipId
 import com.android.skip.dataclass.LoadSkipText
+import com.android.skip.util.MyToast
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.StringUtils.getString
 import kotlinx.coroutines.CoroutineScope
@@ -28,7 +28,10 @@ class ConfigLoadRepository @Inject constructor() {
     }
 
     suspend fun getTargetRect(
-        rootNode: AccessibilityNodeInfo, activityName: String?, isStrict: Boolean?
+        rootNode: AccessibilityNodeInfo,
+        activityName: String?,
+        isStrict: Boolean?,
+        isShowTip: Boolean
     ): Rect? {
         val targetAppPackage = rootNode.packageName.toString()
         var targetConfig = configLoadSchemaMap[targetAppPackage]
@@ -47,7 +50,13 @@ class ConfigLoadRepository @Inject constructor() {
         return withContext(Dispatchers.Default) {
             try {
                 val skipByTextTasks =
-                    createSkipByTextTasks(this, rootNode, targetConfig?.skipTexts, activityName)
+                    createSkipByTextTasks(
+                        this,
+                        rootNode,
+                        targetConfig?.skipTexts,
+                        activityName,
+                        isShowTip
+                    )
                 val skipByIdTasks =
                     createSkipByIdTasks(this, rootNode, targetConfig?.skipIds, activityName)
                 val skipByBoundTasks =
@@ -90,7 +99,8 @@ class ConfigLoadRepository @Inject constructor() {
         scope: CoroutineScope,
         rootNode: AccessibilityNodeInfo,
         skipTexts: List<LoadSkipText>?,
-        activityName: String?
+        activityName: String?,
+        isShowTip: Boolean
     ): List<Deferred<Rect?>> {
         val deferredResults = mutableListOf<Deferred<Rect?>>()
         if (skipTexts.isNullOrEmpty()) return deferredResults
@@ -118,7 +128,10 @@ class ConfigLoadRepository @Inject constructor() {
                 targetNode?.let {
                     // 优先尝试直接节点点击
                     if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                        // 点击成功，无需返回矩形
+                        // 点击成功
+                        if (isShowTip) {
+                            MyToast.show(R.string.toast_skip_tip)
+                        }
                         null  // 注意：这里需要让调用方知道已点击，不再执行手势
                     } else {
                         if (skipText.click != null) {
@@ -129,7 +142,6 @@ class ConfigLoadRepository @Inject constructor() {
                             val rect = Rect()
                             it.getBoundsInScreen(rect)
                             rect
-
                         }
                     }
 

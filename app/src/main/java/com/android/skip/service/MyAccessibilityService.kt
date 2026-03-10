@@ -87,7 +87,8 @@ class MyAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         try {
-            if(event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+            if(event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+                event?.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) return
 
             val packageName = event.packageName?.toString() ?: return
 
@@ -100,7 +101,7 @@ class MyAccessibilityService : AccessibilityService() {
             }
 
             Log.d("SKIP_APP",
-                "onAccessibilityEvent: WINDOW_STATE_CHANGED and scanTime =$scanTimes\n appPackageName =$appPackageName"
+                "onAccessibilityEvent: ${event.eventType} and scanTime =$scanTimes\n appPackageName =$appPackageName"
             )
 
             val rootNode = getCurrentRootNode() ?: return
@@ -114,7 +115,7 @@ class MyAccessibilityService : AccessibilityService() {
                 val that = this
                 serviceScope.launch {
                     val targetRect =
-                        configLoadRepository.getTargetRect(rootNode, appActivityName, isStrict)
+                        configLoadRepository.getTargetRect(rootNode, appActivityName, isStrict, isShowTip)
                     targetRect?.let { rect ->
                         val rectStr = rect.toString()
                         if(clickedRect.add(rectStr)){
