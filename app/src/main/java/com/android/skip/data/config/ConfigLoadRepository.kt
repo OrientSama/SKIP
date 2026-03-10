@@ -50,13 +50,7 @@ class ConfigLoadRepository @Inject constructor() {
         return withContext(Dispatchers.Default) {
             try {
                 val skipByTextTasks =
-                    createSkipByTextTasks(
-                        this,
-                        rootNode,
-                        targetConfig?.skipTexts,
-                        activityName,
-                        isShowTip
-                    )
+                    createSkipByTextTasks(this, rootNode, targetConfig?.skipTexts, activityName, isShowTip)
                 val skipByIdTasks =
                     createSkipByIdTasks(this, rootNode, targetConfig?.skipIds, activityName)
                 val skipByBoundTasks =

@@ -23,6 +23,7 @@ import com.android.skip.ui.whitelist.WhiteListRepository
 import com.android.skip.util.AccessibilityState
 import com.android.skip.util.AccessibilityStateUtils
 import com.android.skip.util.MyToast
+import com.android.skip.util.isUseful
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.ScreenUtils
@@ -87,11 +88,8 @@ class MyAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         try {
-            if(event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-                event?.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) return
-
+            if(!event.isUseful()) return
             val packageName = event.packageName?.toString() ?: return
-
             if (whiteListRepository.isAppInWhiteList(packageName)) return  // 过滤白名单
 
             if (packageName != appPackageName) {
@@ -217,8 +215,7 @@ class MyAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun getActivityName(event: AccessibilityEvent?): String? {
-        event ?: return null
+    private fun getActivityName(event: AccessibilityEvent): String? {
         val className = event.className
 
         className ?: return null
