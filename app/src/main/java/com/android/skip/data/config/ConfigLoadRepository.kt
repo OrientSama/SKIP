@@ -38,7 +38,7 @@ class ConfigLoadRepository @Inject constructor() {
 
         if (isStrict != true) {
             val defaultSkipTexts = listOf(
-                LoadSkipText(text = getString(R.string.settings_strict_skip))
+                LoadSkipText(text = getString(R.string.settings_strict_skip), length = 4)
             )
             if (targetConfig == null) {
                 targetConfig = ConfigLoadSchema(targetAppPackage, defaultSkipTexts)
@@ -120,25 +120,15 @@ class ConfigLoadRepository @Inject constructor() {
                 }
 
                 targetNode?.let {
-                    // 优先尝试直接节点点击
-                    if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                        // 点击成功
-                        if (isShowTip) {
-                            MyToast.show(R.string.toast_skip_tip)
-                        }
-                        null  // 注意：这里需要让调用方知道已点击，不再执行手势
+                    if (skipText.click != null) {
+                        // 使用配置的固定区域，后续手势点击（因为无法通过节点点击）
+                        skipText.click
                     } else {
-                        if (skipText.click != null) {
-                            // 使用配置的固定区域，后续手势点击（因为无法通过节点点击）
-                            skipText.click
-                        } else {
-                            // 节点点击失败，回退到坐标手势
-                            val rect = Rect()
-                            it.getBoundsInScreen(rect)
-                            rect
-                        }
+                        // 节点点击失败，回退到坐标手势
+                        val rect = Rect()
+                        it.getBoundsInScreen(rect)
+                        rect
                     }
-
                 }
             })
         }

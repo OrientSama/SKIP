@@ -128,10 +128,6 @@ class MyAccessibilityService : AccessibilityService() {
                 appPackageName = packageName
             }
 
-            LogUtils.d(
-                "onAccessibilityEvent: ${event.eventType} and scanTime =$scanTimes\n appPackageName =$appPackageName"
-            )
-
             val rootNode = getCurrentRootNode() ?: return
             val rootPackageName = rootNode.packageName.toString()
             if( rootPackageName != packageName ) return
